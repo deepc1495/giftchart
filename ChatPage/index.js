@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, View, TouchableOpacity, Image, Video } from 'react-native';
-import { GiftedChat, Actions } from 'react-native-gifted-chat';
+import { Dimensions, View, TouchableOpacity, Image, Video, StyleSheet, Text } from 'react-native';
+import { pickSingle } from 'react-native-document-picker';
+import { GiftedChat, Actions, Bubble, InputToolbar } from 'react-native-gifted-chat';
 import * as ImagePicker from 'react-native-image-picker';
 
 const ChatPage = () => {
@@ -54,6 +55,10 @@ const ChatPage = () => {
               name: 'You',
             },
             image: response?.assets[0]?.uri,
+            type:'img',
+            name:response?.assets[0]?.fileName
+
+
           };
           console.log('tess',imageMessage)
           onSend([imageMessage]);
@@ -63,6 +68,37 @@ const ChatPage = () => {
       console.log('errr',error)
      }
     };
+
+    const pickCamera = async() => {
+      try {
+       await ImagePicker?.launchCamera(options, response => {
+         console.log('dddd',response)
+         if (response.didCancel) {
+           console.log('User cancelled image picker');
+         } else if (response.error) {
+           console.log('ImagePicker Error: ', response.error);
+         } else {
+           const imageMessage = {
+             _id: Math.round(Math.random() * 1000000),
+             createdAt: new Date(),
+             user: {
+               _id: 1,
+               name: 'You',
+             },
+             image: response?.assets[0]?.uri,
+             type:'img',
+             name:response?.assets[0]?.fileName
+ 
+ 
+           };
+           console.log('tess',imageMessage)
+           onSend([imageMessage]);
+         }
+       });
+      } catch (error) {
+       console.log('errr',error)
+      }
+     };
 
     const pickVideo = async() => {
       try {
@@ -91,12 +127,38 @@ const ChatPage = () => {
       }
      };
 
+    const PickDoc = async() => {
+      try {
+        const result = await pickSingle({mode:'import'})
+        if(result?.name){
+          const imageMessage = {
+            _id: Math.round(Math.random() * 1000000),
+            createdAt: new Date(),
+            user: {
+              _id: 1,
+              name: 'You',
+            },
+            image: result?.uri,
+            type:'doc',
+            name:result?.name
+          };
+          console.log('tess',imageMessage)
+          onSend([imageMessage]);
+        }
+        
+      } catch (error) {
+       console.log('errr',error)
+      }
+     };
+
     return (
       <Actions
         {...props}
         options={{
           'Send Image': pickImage,
+          'Camera': pickCamera,
           'Send Video': pickVideo,
+          'Send Document': PickDoc,
           // Cancel: () => {},
         }}
         optionTintColor="#222B45"
@@ -106,12 +168,18 @@ const ChatPage = () => {
 
   const renderMessageImage = (props) => {
     const { currentMessage } = props;
+    console.log('currentMessage',currentMessage)
     return (
       <View style={{ padding: 5 }}>
-        <Image
+        {currentMessage?.type ==='doc'?
+        <View style={{paddingHorizontal:5}}>
+          <Text style={{color:'#fff'}}>{currentMessage?.name}</Text>
+        </View>
+       : <Image
           source={{ uri: currentMessage.image }}
           style={{ width: 200, height: 200, borderRadius: 13 }}
         />
+        }
       </View>
     );
   };
@@ -144,11 +212,22 @@ const ChatPage = () => {
         renderActions={renderCustomActions}
         renderMessageImage={renderMessageImage}
         renderMessageVideo={renderMessageVideo}
-      messagesContainerStyle={{backgroundColor:'red'}}
-        
+        renderme
+        renderInputToolbar={(props) => <CustomBubble {...props} />}
       />
     </View>
   );
 };
 
 export default ChatPage;
+
+
+const CustomBubble = (props) => {
+  return (
+    <InputToolbar {...props} containerStyle={{borderTopWidth: 0,backgroundColor:'#F8F8FF',borderRadius:30,marginHorizontal:10}} />
+  );
+};
+
+
+
+
